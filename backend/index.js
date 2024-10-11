@@ -1,3 +1,6 @@
+// TODO:
+    // Learn and use passport.js for "Signup using Google"
+
 const express = require("express");
 const app = express();
 

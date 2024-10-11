@@ -9,6 +9,7 @@ const { adminMiddleware } = require("../middleware/admin");
 dotenv.config();
 const ADMIN_JWT_SIGN = process.env.ADMIN_JWT_SIGN;
 
+// route for signingUp the Admin
 adminRouter.post("/signup", async (req, res) => {
   try {
     // Input validation using Zod
@@ -54,6 +55,7 @@ adminRouter.post("/signup", async (req, res) => {
   }
 });
 
+// route for signingIn the Admin
 adminRouter.post("/signin", async (req, res) => {
   const { email, password } = req.body;
 
@@ -92,6 +94,7 @@ adminRouter.post("/signin", async (req, res) => {
   }
 });
 
+// route for creating a course by the Admin
 adminRouter.post("/course", adminMiddleware, async (req, res) => {
   try {
     const adminId = req.adminId;
@@ -117,9 +120,63 @@ adminRouter.post("/course", adminMiddleware, async (req, res) => {
   }
 });
 
-adminRouter.put("/course", (req, res) => {});
+// route for editing a course by the Admin
+adminRouter.put("/course", adminMiddleware, async (req, res) => {
+  try {
+    const adminId = req.adminId;
+    const { title, description, imgUrl, price, courseId } = req.body;
 
-adminRouter.get("/course/bulk", (req, res) => {});
+    const course = await courseModel.updateOne(
+      {
+        _id: courseId,
+        creatorId: adminId,
+      },
+      {
+        title,
+        description,
+        imgUrl,
+        price,
+      }
+    );
+
+    if (!course) {
+      return res.json({
+        message: "Course not updated",
+        courseId: course._id,
+      });
+    }
+
+    res.json({
+      message: "Course updated successfully",
+      courseId: course._id,
+    });
+  } catch (error) {
+    console.error("Error: ", error);
+    res.json({
+      error: "Something is not good with Course editing endpoint",
+    });
+  }
+});
+
+// route for getting all the courses created by the Admin
+adminRouter.get("/course/bulk", adminMiddleware, async (req, res) => {
+  try {
+    const creatorId = req.adminId;
+
+    const myCourses = await courseModel.find({
+      creatorId,
+    });
+
+    res.json({
+      myCourses,
+    });
+  } catch (error) {
+    console.error("Error: ", error);
+    res.json({
+      error: "Error faced in the fetching all courses"
+    })
+  }
+});
 
 module.exports = {
   adminRouter,
