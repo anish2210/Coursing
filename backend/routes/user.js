@@ -1,10 +1,11 @@
 const { Router } = require("express");
 const userRouter = Router();
-const { userModel } = require("../db");
+const { userModel, purchasesModel } = require("../db");
 const bcrypt = require("bcrypt");
 const { z } = require("zod");
 const jwt = require("jsonwebtoken");
 const dotenv = require("dotenv");
+const { userMiddleware } = require("../middleware/user");
 dotenv.config();
 
 const USER_JWT_SIGN = process.env.USER_JWT_SIGN;
@@ -92,8 +93,20 @@ userRouter.post("/signin", async (req, res) => {
   }
 });
 
-userRouter.get("/purchases", (req, res) => {
-  
+userRouter.get("/purchases", userMiddleware, async(req, res) => {
+  try {
+    const userId = req.userId;
+    
+    const purchases = await purchasesModel.find({userId});
+    res.json({
+      purchases
+    })
+  } catch (error) {
+    console.error("Error: ", error);
+    res.json({
+      error: "Something is not good with this endpoint",
+    });
+  }
 });
 
 module.exports = {
