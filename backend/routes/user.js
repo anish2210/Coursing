@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const userRouter = Router();
-const { userModel, purchasesModel } = require("../db");
+const { userModel, purchasesModel, courseModel } = require("../db");
 const bcrypt = require("bcrypt");
 const { z } = require("zod");
 const jwt = require("jsonwebtoken");
@@ -60,31 +60,31 @@ userRouter.post("/signin", async (req, res) => {
 
   try {
     const user = await userModel.findOne({
-      email
+      email,
     });
     if (!user) {
       return res.json({
-        message:"invalid email or password!"
+        message: "invalid email or password!",
       });
     }
     const isValidPassword = await bcrypt.compare(password, user.password);
 
-    if(!isValidPassword){
+    if (!isValidPassword) {
       return res.json({
-        error: "invalid email or password!"
-      })
+        error: "invalid email or password!",
+      });
     }
 
     const token = jwt.sign(
       {
         id: user._id,
       },
-      USER_JWT_SIGN);
-    
-    res.json({
-      token: token
-    })
+      USER_JWT_SIGN
+    );
 
+    res.json({
+      token: token,
+    });
   } catch (error) {
     console.error("Error: ", error);
     res.json({
@@ -93,14 +93,26 @@ userRouter.post("/signin", async (req, res) => {
   }
 });
 
-userRouter.get("/purchases", userMiddleware, async(req, res) => {
+userRouter.get("/purchases", userMiddleware, async (req, res) => {
   try {
     const userId = req.userId;
-    
-    const purchases = await purchasesModel.find({userId});
+
+    const purchases = await purchasesModel.find({ userId });
+
+    let purchasedCourseId = [];
+
+    for (let i = 0; i < purchases.length; i++) {
+      purchasedCourseId.push(purchases[i].courseId);
+    }
+
+    const courseData = await courseModel.find({
+      _id: { $in: purchasedCourseId },
+    });
+
     res.json({
-      purchases
-    })
+      purchases,
+      courseData,
+    });
   } catch (error) {
     console.error("Error: ", error);
     res.json({
